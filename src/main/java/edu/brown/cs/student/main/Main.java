@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import com.google.common.collect.ImmutableMap;
@@ -14,6 +15,7 @@ import freemarker.template.Configuration;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
+import org.json.JSONObject;
 import spark.*;
 import spark.template.freemarker.FreeMarkerEngine;
 
@@ -62,6 +64,8 @@ public final class Main {
     // TODO: create a call to Spark.post to make a POST request to a URL which
     // will handle getting matchmaking results for the input
     // It should only take in the route and a new ResultsHandler
+    Spark.post("/result", new ResultsHandler());
+
     Spark.options("/*", (request, response) -> {
       String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
       if (accessControlRequestHeaders != null) {
@@ -111,13 +115,39 @@ public final class Main {
       // and rising
       // for generating matches
 
+      JSONObject reqObject = null;
+      String sun ="";
+      String moon = "";
+      String rising = "";
+
+
+      try{
+
+        reqObject = new JSONObject(req.body());
+        sun = reqObject.getString("sun");
+        moon = reqObject.getString("moon");
+        rising = reqObject.getString("rising");
+
+      } catch (Exception e){
+        System.out.println("error");
+      }
+
+
       // TODO: use the MatchMaker.makeMatches method to get matches
+
+      List<String> matches = MatchMaker.makeMatches(sun, moon, rising);
 
       // TODO: create an immutable map using the matches
 
+      ImmutableMap<Integer, String> matchesMap = ImmutableMap.of(
+              1, matches.get(0),
+              2, matches.get(1),
+              3, matches.get(2));
+
       // TODO: return a json of the suggestions (HINT: use GSON.toJson())
       Gson GSON = new Gson();
-      return null;
+      String jsonOutput = GSON.toJson(matchesMap);
+      return jsonOutput;
     }
   }
 }
